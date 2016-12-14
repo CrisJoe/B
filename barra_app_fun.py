@@ -62,6 +62,22 @@ def get_factor_exposure(data_standard, data_cap):
         data1[~temp_row, j] = temp_data[:,0]
     return data1
     
+def get_industry_matrix(data_ind, ind_style):
     
-    
+    if ind_style == 'ZX':
+        temp_name = [u"石油石化",u"煤炭",u"有色金属",u"电力及公用事业",u"钢铁",
+                     u"基础化工",u"建筑",u"建材",u"轻工制造",u"机械",u"电力设备",
+                     u"国防军工",u"汽车",u"商贸零售",u"餐饮旅游",u"家电",
+                     u"纺织服装",u"医药",u"食品饮料",u"农林牧渔",u"银行",
+                     u"非银行金融",u"房地产",u"交通运输",u"电子元器件",u"通信",
+                     u"计算机",u"传媒",u"综合"]
+        ind_matrix = np.zeros([len(data_ind), len(temp_name)])
+        for ind_i in range(len(temp_name)):
+            temp_row = np.where(data_ind.values == temp_name[ind_i])[0]
+            ind_matrix[temp_row, ind_i] = 1
+        data1 = DataFrame(ind_matrix, index=data_ind.index, columns=temp_name)
+    '''
+    elif ind_style == 'SW':
+    '''    
+    return data1
 
