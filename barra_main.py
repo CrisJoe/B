@@ -31,6 +31,39 @@ conn = mysql.connector.connect(user='root', password='password',
 # -*- coding: utf-8 -*-
 """
 Created on Wed Dec 14 10:03:29 2016
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Dec 14 10:03:29 2016
+
+@author: CrisJoe
+
+
+Barra main program
+
+"""
+
+
+import mysql.connector
+
+from WindPy import *
+
+import numpy as np
+
+import pandas as pd
+
+from pandas import Series, DataFrame
+
+# import barra_main_fun as bmf
+
+
+
+
+
+conn = mysql.connector.connect(user='root', password='password',  
+                               database='ffactors', use_unicode=True)
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Dec 14 10:03:29 2016
 
 @author: CrisJoe
 
@@ -65,7 +98,7 @@ conn = mysql.connector.connect(user='root', password='password',
 cursor = conn.cursor()
 '''
 
-window = 36
+window = 6
 
 BegT = '2009-01-01'
 EndT = '2016-09-30'
@@ -76,6 +109,9 @@ Date = [datetime.strftime(x, '%Y%m%d') for x in Date2]
 
 single_factor_b = DataFrame()
 single_factor_t = DataFrame()
+seri_factor = []
+seri_return = []
+seri_ind = []
 date_i = 0
 #while date_i < len(Date) - 1:
 while date_i < window:
@@ -88,6 +124,9 @@ while date_i < window:
 
     [factor_expose, ind_matrix] = bmf.data_for_reg(data_factor, data_cap, 
                                                    data_ind)
+    seri_factor.append(factor_expose)
+    seri_ind.append(ind_matrix)
+    seri_return.append(data_return)
     print '单因子检验- ' + endT + ' :'
     [single_factor_b2, single_factor_t2] = bmf.single_factor_reg(
                                         factor_expose, ind_matrix, data_return)
@@ -101,3 +140,12 @@ while date_i < window:
 
 
 factor_selected = bmf.select_single_factor(single_factor_b, single_factor_t)
+
+
+
+date_i = 0
+#while date_i < len(Date) - 1:
+while date_i < window:
+    a = bmf.combine_factor_b(factor_selected['risk_factor'], 
+                             seri_factor[date_i], seri_return[date_i],
+                             seri_ind[date_i])
