@@ -80,4 +80,23 @@ def get_industry_matrix(data_ind, ind_style):
     elif ind_style == 'SW':
     '''    
     return data1
+    
+def print_corr(factor):
+    temp_corr_matrix = factor.corr()
+    temp_len = len(temp_corr_matrix)
+    temp_name = temp_corr_matrix.index
+    temp_matrix = temp_corr_matrix.values
+    temp = {}
+    if temp_len == 2:
+        temp[temp_name[1] +' & '+ temp_name[0]] = round(temp_matrix[1, 0], 2)
+    else:
+        for i in range(1,temp_len):
+            for j in range(i-1):
+                temp[temp_name[i] +' & '+ temp_name[j]] = round(temp_matrix[i, j], 2)
+    temp = Series(temp)
+    temp_loc = temp[np.abs(temp) >= 0.75].index
+    for i in range(len(temp_loc)):
+        print '存在共线性: ' + str(temp[temp_loc[i]]) + ', ' + temp_loc[i]
+    
+
 
