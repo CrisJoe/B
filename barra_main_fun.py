@@ -76,6 +76,84 @@ def data_prepare(endT, begT2, endT2):
     
     # data from Wind
     temp_begT2 = begT2
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Dec 14 10:04:17 2016
+
+@author: CrisJoe
+
+
+main function for barra
+
+"""
+from WindPy import *
+
+import numpy as np
+
+import pandas as pd
+
+from pandas import Series, DataFrame
+
+import statsmodels.api as sm
+
+import scipy.stats as stats
+
+import barra_app_fun as baf
+
+import mysql.connector
+conn = mysql.connector.connect(user='joe', password='password',  host='192.168.1.101', \
+    database='ffactors', use_unicode=True)
+
+'''
+conn = mysql.connector.connect(user='root', password='password',  
+                               database='ffactors', use_unicode=True)
+'''
+cursor = conn.cursor()
+
+def data_prepare(endT, begT2, endT2):
+    
+    factor_names = ['ETOP', 'ETP5', 'EXTE', 'VFLO', 'VERN', 'PAYO', 'VCAP', 'AGRO',
+                'EGRO', 'DELE', 'S_SalseG', 'C_SalseG', 'T_SalseG', 'S_ProfitG',
+                'C_ProfitG', 'T_ProfitG', 'S_CFOG', 'C_CFOG', 'T_CFOG', 'S_ROEG', 
+                'C_ROEG', 'T_ROEG', 'S_ROAG', 'C_ROAG', 'T_ROAG', 'MLEV', 'BLEV', 
+                'DTOA', 'STO_1M', 'STO_3M', 'STO_6M', 'STO_12M', 'STO_60M', 
+                'HALPHA', 'RSTR_1M', 'RSTR_3M', 'RSTR_6M', 'RSTR_12M', 'LNCAP',
+                'LNCAPCB', 'BTOP', 'STOP', 'EBITDAvsEV', 'HILO', 'BTSG', 'DASTD', 
+                'LPRI', 'CMRA', 'VOLBT', 'SERDP', 'BETA', 'SIGMA', 'YLD', 'YLD3', 
+                'S_GPM', 'C_GPM', 'T_GPM', 'S_NPM', 'C_NPM', 'T_NPM', 'S_CTP', 
+                'C_CTP', 'T_CTP', 'S_ROE', 'C_ROE', 'T_ROE', 'S_ROA', 'C_ROA', 
+                'T_ROA']
+                
+    '''factor data prepare'''
+    temp_endT = endT
+    temp_str = 'select * from '+'A股_因子载荷_' + temp_endT +';'  
+    cursor.execute(temp_str)
+    data_factor = cursor.fetchall()
+    temp_data = DataFrame(data_factor)
+    temp_index = temp_data[1]   # 股票代码
+    temp_data1 = temp_data.ix[:,4:]
+    data_factor = DataFrame(temp_data1.values, index = temp_index, 
+                             columns=factor_names)
+    data_code1 = [x[2:] + '.' + x[:2] for x in temp_index]
+    
+    w.start()
+    # delete stocks which IPO < 1 year
+    IPO_date = w.wss(data_code1, "ipo_date").Data[0]
+    delta_days = [(datetime.strptime(temp_endT, '%Y%m%d') - x).days 
+                  for x in IPO_date]
+    data_code = [data_code1[x] for x, y in enumerate(delta_days) if y > 365]        # 1 year
+    temp_data_code = [x[-2:] + x[:6] for x in data_code]
+    data_factor = data_factor.loc[temp_data_code]
+    
+    # delete ST PT stocks
+
+    
+    # delete '停牌'                                         ??????是否需要剔除
+    
+    # delete 财务数据异常
+    
+    # data from Wind
+    temp_begT2 = begT2
     temp_endT2 = endT2
     temp_prepare = w.wss(data_code, "pct_chg_per,ev,industry_citic",
                          "startDate="+temp_begT2+";endDate="+temp_endT2
@@ -165,3 +243,32 @@ def select_single_factor(single_factor_b, single_factor_t):        # 复杂的�
                       index=temp2.index)
     return data1
     
+
+def combine_factor_b(factor_select_risk, data_factor, data_return, data_ind):
+    big_factors = {'EarningsYield':['ETOP', 'ETP5'], 'EarningsVariability':['EXTE', 'VFLO', 'VERN'],
+                   'Growth':['PAYO', 'VCAP', 'AGRO','EGRO', 'DELE', 'S_SalseG', 'C_SalseG', 'T_SalseG', 
+                   'S_ProfitG', 'C_ProfitG', 'T_ProfitG', 'S_CFOG', 'C_CFOG', 'T_CFOG', 'S_ROEG', 
+                   'C_ROEG', 'T_ROEG', 'S_ROAG', 'C_ROAG', 'T_ROAG'], 'Leverage':['MLEV', 'BLEV', 'DTOA'],
+                   'Liquidity':['STO_1M', 'STO_3M', 'STO_6M', 'STO_12M', 'STO_60M'],
+                   'Momentum':['HALPHA', 'RSTR_1M', 'RSTR_3M', 'RSTR_6M', 'RSTR_12M'],
+                   'Size':['LNCAP', 'LNCAPCB'], 'Value':['BTOP', 'STOP', 'EBITDAvsEV'],
+                   'Volatility':['HILO', 'BTSG', 'DASTD', 'LPRI', 'CMRA', 'VOLBT', 'SERDP', 'BETA', 'SIGMA'],
+                   'DividendYield':['YLD', 'YLD3'],'FinancialQuality':['S_GPM', 'C_GPM', 
+                   'T_GPM', 'S_NPM', 'C_NPM', 'T_NPM', 'S_CTP', 'C_CTP', 'T_CTP', 'S_ROE', 
+                   'C_ROE', 'T_ROE', 'S_ROA', 'C_ROA', 'T_ROA']}
+    big_names = ['EarningsYield', 'EarningsVariability', 'Growth', 'Leverage',
+                  'Liquidity', 'Momentum', 'Size', 'Value','Volatility', 'DividendYield',
+                  'FinancialQuality']
+    for big_i in range(len(big_names)):
+        small_factor_name = big_factors[big_names[big_i]]
+        temp_loc = factor_select_risk[small_factor_name]
+        true_name = temp_loc[temp_loc == True].index
+        false_name = temp_loc[temp_loc == False].index
+        small_factor = data_factor[small_factor_name]
+        small_factor[false_name] = 0
+        temp_true_factor = data_factor[true_name]
+        if len(true_name) >= 2:
+            baf.print_corr(temp_true_factor)
+        temp_row = np.isnan(small_factor)
+        
+        
